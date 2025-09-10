@@ -49,10 +49,10 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.phone || !formData.receipt) {
+    if (!formData.name || !formData.phone) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos e anexe o comprovante.",
+        description: "Por favor, preencha nome e telefone.",
         variant: "destructive",
       });
       return;
@@ -61,22 +61,28 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
     setIsSubmitting(true);
 
     try {
-      // Upload do comprovante para o Supabase Storage
-      const fileExt = formData.receipt.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      let receiptUrl = null;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('event-banners')
-        .upload(`receipts/${fileName}`, formData.receipt);
+      // Upload do comprovante apenas se foi fornecido
+      if (formData.receipt) {
+        const fileExt = formData.receipt.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('event-banners')
+          .upload(`receipts/${fileName}`, formData.receipt);
 
-      if (uploadError) {
-        throw uploadError;
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        // Obter URL pública do arquivo
+        const { data: { publicUrl } } = supabase.storage
+          .from('event-banners')
+          .getPublicUrl(`receipts/${fileName}`);
+          
+        receiptUrl = publicUrl;
       }
-
-      // Obter URL pública do arquivo
-      const { data: { publicUrl } } = supabase.storage
-        .from('event-banners')
-        .getPublicUrl(`receipts/${fileName}`);
 
       // Salvar no banco de dados
       const { error: dbError } = await supabase
@@ -85,7 +91,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
           {
             name: formData.name,
             phone: formData.phone,
-            receipt_url: publicUrl,
+            receipt_url: receiptUrl,
             status: 'pending'
           }
         ]);
@@ -100,7 +106,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
         `✨ *Dados do Inscrito:*\n` +
         `👤 Nome: ${formData.name}\n` +
         `📱 Telefone: ${formData.phone}\n\n` +
-        `📎 *Comprovante enviado!*\n` +
+        `${formData.receipt ? '📎 *Comprovante enviado!*\n' : '📎 *Comprovante não anexado*\n'}` +
         `💳 Pagamento feito via PIX: ${eventConfig?.payment_info || "taiseacordi@gmail.com"}\n` +
         `💰 Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n\n` +
         `Que Deus abençoe sua participação! 🕊️`
@@ -204,7 +210,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
                   </div>
                 )}
               <p className="text-xs text-muted-foreground text-center">
-                Após o pagamento, anexe o comprovante no campo abaixo
+                Após o pagamento, você pode anexar o comprovante no campo abaixo (opcional)
               </p>
             </div>
           </div>
@@ -212,7 +218,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
           <div className="space-y-2">
             <Label htmlFor="receipt" className="flex items-center gap-2 text-sm font-medium">
               <Upload className="w-4 h-4" />
-              Comprovante de Pagamento
+              Comprovante de Pagamento <span className="text-muted-foreground text-xs">(opcional)</span>
             </Label>
             <div className="relative">
               <Input
@@ -221,7 +227,6 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
                 accept="image/*,.pdf"
                 onChange={handleFileChange}
                 className="border-border/50 focus:border-celestial/50 transition-colors cursor-pointer"
-                required
               />
               {formData.receipt && (
                 <div className="flex items-center gap-2 text-xs text-celestial mt-2 bg-divine/10 p-2 rounded-md">
