@@ -105,21 +105,23 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
       // Criar mensagem para WhatsApp
       const paymentMessage = formData.paymentType === 'pix' 
         ? `💳 *Pagamento via PIX*\n` +
-          `Chave PIX: ${eventConfig?.payment_info || "taiseacordi@gmail.com"}\n` +
+          `🔑 Chave PIX: ${eventConfig?.payment_info || "taiseacordi@gmail.com"}\n` +
           `💰 Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
-          `${formData.receipt ? '📎 Comprovante anexado no formulário\n' : '📎 ⚠️ ENVIE O COMPROVANTE NESTA CONVERSA\n'}`
-        : `💰 *Pagamento Presencial*\n` +
-          `Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
-          `💵 Pagamento será realizado no local do evento\n`;
+          `${formData.receipt ? '✅ Comprovante anexado no formulário\n' : '⚠️ *IMPORTANTE: ENVIE O COMPROVANTE NESTA CONVERSA*\n'}`
+        : `💵 *Pagamento Presencial*\n` +
+          `💰 Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
+          `🏢 Pagamento será realizado no local do evento\n`;
 
       const message = encodeURIComponent(
-        `🙏 *INSCRIÇÃO CONFIRMADA - Encontro Ministério Sede do Espírito*\n\n` +
-        `✨ *Dados do Inscrito:*\n` +
-        `👤 Nome: ${formData.name}\n` +
+        `🙏 *INSCRIÇÃO CONFIRMADA*\n` +
+        `✨ *Encontro Ministério Sede do Espírito* ✨\n\n` +
+        `👤 *Dados do Inscrito:*\n` +
+        `📝 Nome: ${formData.name}\n` +
         `📱 Telefone: ${formData.phone}\n\n` +
         `💳 *Forma de Pagamento:*\n` +
         paymentMessage + `\n` +
-        `Que Deus abençoe sua participação! 🕊️`
+        `🕊️ *Que Deus abençoe sua participação!* 🙏\n` +
+        `⭐ Aguardamos você com muito carinho! ⭐`
       );
 
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
