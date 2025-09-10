@@ -60,7 +60,7 @@ const Index = () => {
                   <div className="w-24 h-1 bg-gradient-to-r from-celestial to-divine mx-auto rounded-full"></div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+                <div className="grid grid-cols-2 gap-4 sm:gap-8">
                   {eventConfig.event_date && (
                     <div className="p-6 bg-muted/30 rounded-xl border border-border/20 hover:shadow-md transition-all duration-300">
                       <div className="flex items-center gap-4 mb-4">
