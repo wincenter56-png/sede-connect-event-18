@@ -34,7 +34,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const whatsappNumber = "5548996101891"; // Número do Ministério Sede do Espírito
+  const whatsappNumber = "554896507165"; // Número do Ministério Sede do Espírito
 
   const handleInputChange = (field: keyof Omit<FormData, 'receipt'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

@@ -230,7 +230,7 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-xl font-mono font-bold bg-gradient-neon bg-clip-text text-transparent">
-                  WhatsApp: (48) 99650-7165
+                  WhatsApp: (48) 96507-165
                 </p>
               </div>
               
