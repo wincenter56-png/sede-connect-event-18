@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Phone, User, CreditCard, Send } from "lucide-react";
+import { Upload, Phone, User, CreditCard, Send, MapPin, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FormData {
   name: string;
   phone: string;
+  paymentType: 'pix' | 'presencial';
   receipt: File | null;
 }
 
@@ -30,6 +31,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
+    paymentType: 'pix',
     receipt: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,14 +103,22 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
       }
 
       // Criar mensagem para WhatsApp
+      const paymentMessage = formData.paymentType === 'pix' 
+        ? `💳 *Pagamento via PIX*\n` +
+          `Chave PIX: ${eventConfig?.payment_info || "taiseacordi@gmail.com"}\n` +
+          `💰 Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
+          `${formData.receipt ? '📎 Comprovante anexado no formulário\n' : '📎 ⚠️ ENVIE O COMPROVANTE NESTA CONVERSA\n'}`
+        : `💰 *Pagamento Presencial*\n` +
+          `Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
+          `💵 Pagamento será realizado no local do evento\n`;
+
       const message = encodeURIComponent(
         `🙏 *INSCRIÇÃO CONFIRMADA - Encontro Ministério Sede do Espírito*\n\n` +
         `✨ *Dados do Inscrito:*\n` +
         `👤 Nome: ${formData.name}\n` +
         `📱 Telefone: ${formData.phone}\n\n` +
-        `${formData.receipt ? '📎 *Comprovante enviado!*\n' : '📎 *Comprovante não anexado*\n'}` +
-        `💳 Pagamento feito via PIX: ${eventConfig?.payment_info || "taiseacordi@gmail.com"}\n` +
-        `💰 Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n\n` +
+        `💳 *Forma de Pagamento:*\n` +
+        paymentMessage + `\n` +
         `Que Deus abençoe sua participação! 🕊️`
       );
 
@@ -127,6 +137,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
       setFormData({
         name: "",
         phone: "",
+        paymentType: 'pix',
         receipt: null,
       });
 
@@ -187,21 +198,81 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
             />
           </div>
 
-          {/* PIX Information */}
-          <div className="bg-holy/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-celestial/20">
-            <div className="flex items-center gap-2 mb-3">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-celestial" />
-              <h3 className="text-sm sm:text-base font-semibold text-celestial">Informações de Pagamento</h3>
+          {/* Tipo de Pagamento */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <CreditCard className="w-4 h-4" />
+              Forma de Pagamento
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleInputChange('paymentType', 'pix')}
+                className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
+                  formData.paymentType === 'pix'
+                    ? 'bg-celestial/10 border-celestial text-celestial'
+                    : 'bg-card border-border hover:border-celestial/50'
+                }`}
+              >
+                <Smartphone className="w-4 h-4" />
+                <span className="text-sm font-medium">PIX</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleInputChange('paymentType', 'presencial')}
+                className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
+                  formData.paymentType === 'presencial'
+                    ? 'bg-celestial/10 border-celestial text-celestial'
+                    : 'bg-card border-border hover:border-celestial/50'
+                }`}
+              >
+                <MapPin className="w-4 h-4" />
+                <span className="text-sm font-medium">Presencial</span>
+              </button>
             </div>
-              <div className="space-y-2">
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Faça o pagamento via PIX para a chave:
-                </p>
-                <div className="bg-card/50 rounded-lg p-2 sm:p-3 border border-border/30">
-                  <p className="font-mono text-xs sm:text-sm font-medium text-center text-celestial break-all">
-                    {eventConfig?.payment_info || "taiseacordi@gmail.com"}
+          </div>
+
+          {/* PIX Information - Só mostra se PIX for selecionado */}
+          {formData.paymentType === 'pix' && (
+            <div className="bg-holy/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-celestial/20">
+              <div className="flex items-center gap-2 mb-3">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-celestial" />
+                <h3 className="text-sm sm:text-base font-semibold text-celestial">Informações de Pagamento PIX</h3>
+              </div>
+                <div className="space-y-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Faça o pagamento via PIX para a chave:
                   </p>
-                </div>
+                  <div className="bg-card/50 rounded-lg p-2 sm:p-3 border border-border/30">
+                    <p className="font-mono text-xs sm:text-sm font-medium text-center text-celestial break-all">
+                      {eventConfig?.payment_info || "taiseacordi@gmail.com"}
+                    </p>
+                  </div>
+                  {eventConfig?.event_value && (
+                    <div className="bg-divine/10 rounded-lg p-2 sm:p-3 border border-celestial/20">
+                      <p className="text-xs sm:text-sm font-medium text-center text-celestial">
+                        Valor: R$ {eventConfig.event_value.toFixed(2).replace('.', ',')}
+                      </p>
+                    </div>
+                  )}
+                <p className="text-xs text-muted-foreground text-center">
+                  Após o pagamento, você pode anexar o comprovante no campo abaixo (opcional)
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Informações Pagamento Presencial */}
+          {formData.paymentType === 'presencial' && (
+            <div className="bg-holy/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-celestial/20">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-celestial" />
+                <h3 className="text-sm sm:text-base font-semibold text-celestial">Pagamento Presencial</h3>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs sm:text-sm text-muted-foreground text-center">
+                  O pagamento será realizado no local do evento
+                </p>
                 {eventConfig?.event_value && (
                   <div className="bg-divine/10 rounded-lg p-2 sm:p-3 border border-celestial/20">
                     <p className="text-xs sm:text-sm font-medium text-center text-celestial">
@@ -209,36 +280,40 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
                     </p>
                   </div>
                 )}
-              <p className="text-xs text-muted-foreground text-center">
-                Após o pagamento, você pode anexar o comprovante no campo abaixo (opcional)
-              </p>
+                <p className="text-xs text-muted-foreground text-center">
+                  Traga o dinheiro no dia do evento
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="receipt" className="flex items-center gap-2 text-sm font-medium">
-              <Upload className="w-4 h-4" />
-              Comprovante de Pagamento <span className="text-muted-foreground text-xs">(opcional)</span>
-            </Label>
-            <div className="relative">
-              <Input
-                id="receipt"
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleFileChange}
-                className="border-border/50 focus:border-celestial/50 transition-colors cursor-pointer"
-              />
-              {formData.receipt && (
-                <div className="flex items-center gap-2 text-xs text-celestial mt-2 bg-divine/10 p-2 rounded-md">
-                  <span>✓</span>
-                  <span>Arquivo selecionado: {formData.receipt.name}</span>
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground mt-2 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border-l-2 border-yellow-400">
-                📋 <strong>Importante:</strong> Após clicar em "Confirmar Inscrição", seus dados serão salvos automaticamente e você será redirecionado ao WhatsApp!
-              </p>
+          {/* Comprovante - Só mostra se PIX for selecionado */}
+          {formData.paymentType === 'pix' && (
+            <div className="space-y-2">
+              <Label htmlFor="receipt" className="flex items-center gap-2 text-sm font-medium">
+                <Upload className="w-4 h-4" />
+                Comprovante de Pagamento <span className="text-muted-foreground text-xs">(opcional)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="receipt"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  className="border-border/50 focus:border-celestial/50 transition-colors cursor-pointer"
+                />
+                {formData.receipt && (
+                  <div className="flex items-center gap-2 text-xs text-celestial mt-2 bg-divine/10 p-2 rounded-md">
+                    <span>✓</span>
+                    <span>Arquivo selecionado: {formData.receipt.name}</span>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-2 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border-l-2 border-yellow-400">
+                  📋 <strong>Importante:</strong> Se não anexar agora, envie o comprovante no WhatsApp após a inscrição!
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <Button
             type="submit"
