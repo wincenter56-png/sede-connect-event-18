@@ -50,29 +50,29 @@ const Index = () => {
         <div className="max-w-4xl mx-auto">
           {/* Event Information */}
           {eventConfig && !isLoading && (
-            <section className="mb-8 sm:mb-12">
-              <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-border/30 shadow-lg">
+            <section className="mb-6 sm:mb-12">
+              <div className="bg-card/50 sm:bg-card/80 sm:backdrop-blur-sm rounded-lg sm:rounded-2xl p-4 sm:p-8 border-0 sm:border sm:border-border/30 sm:shadow-lg">
                 
-                <div className="text-center mb-6 sm:mb-8">
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                <div className="text-center mb-4 sm:mb-8">
+                  <h2 className="text-xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4 text-foreground">
                     Informações do Evento
                   </h2>
-                  <div className="w-24 h-1 bg-gradient-to-r from-celestial to-divine mx-auto rounded-full"></div>
+                  <div className="hidden sm:block w-24 h-1 bg-gradient-to-r from-celestial to-divine mx-auto rounded-full"></div>
                 </div>
                 
-                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-4 sm:gap-6">
+                <div className="space-y-3 sm:grid sm:grid-cols-1 min-[480px]:grid-cols-2 sm:gap-6 sm:space-y-0">
                   {eventConfig.event_date && (
-                    <div className="p-6 bg-muted/30 rounded-xl border border-border/20 hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-celestial rounded-xl flex items-center justify-center">
-                          <Calendar className="w-6 h-6 text-white" />
+                    <div className="p-3 sm:p-6 bg-muted/20 sm:bg-muted/30 rounded-lg sm:rounded-xl border-0 sm:border sm:border-border/20 sm:hover:shadow-md sm:transition-all sm:duration-300">
+                      <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-celestial rounded-lg sm:rounded-xl flex items-center justify-center">
+                          <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-foreground">Data & Hora</h3>
-                          <p className="text-sm text-muted-foreground">Quando acontece</p>
+                          <h3 className="text-base sm:text-lg font-semibold text-foreground">Data & Hora</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Quando acontece</p>
                         </div>
                       </div>
-                      <p className="font-semibold text-lg text-foreground">
+                      <p className="font-medium sm:font-semibold text-sm sm:text-lg text-foreground">
                         {new Date(eventConfig.event_date).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: 'long',
@@ -85,17 +85,17 @@ const Index = () => {
                   )}
                   
                   {eventConfig.event_value && (
-                    <div className="p-6 bg-muted/30 rounded-xl border border-border/20 hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-divine rounded-xl flex items-center justify-center">
-                          <DollarSign className="w-6 h-6 text-white" />
+                    <div className="p-3 sm:p-6 bg-muted/20 sm:bg-muted/30 rounded-lg sm:rounded-xl border-0 sm:border sm:border-border/20 sm:hover:shadow-md sm:transition-all sm:duration-300">
+                      <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-divine rounded-lg sm:rounded-xl flex items-center justify-center">
+                          <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-foreground">Investimento</h3>
-                          <p className="text-sm text-muted-foreground">Valor da inscrição</p>
+                          <h3 className="text-base sm:text-lg font-semibold text-foreground">Investimento</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Valor da inscrição</p>
                         </div>
                       </div>
-                      <p className="font-bold text-2xl text-celestial">
+                      <p className="font-bold text-lg sm:text-2xl text-celestial">
                         R$ {eventConfig.event_value.toFixed(2).replace('.', ',')}
                       </p>
                     </div>
@@ -103,26 +103,26 @@ const Index = () => {
                 </div>
 
                 {/* Payment Methods Section */}
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold text-center text-foreground mb-6">
+                <div className="mt-6 sm:mt-8">
+                  <h3 className="text-lg sm:text-xl font-semibold text-center text-foreground mb-4 sm:mb-6">
                     Formas de Pagamento
                   </h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6 sm:space-y-0">
                     {/* PIX Payment */}
                     {eventConfig.payment_info && (
-                      <div className="group relative p-6 bg-gradient-card backdrop-blur-sm rounded-2xl border border-white/10 hover:border-green-400/30 transition-all duration-300 hover-scale">
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300"></div>
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
-                            <span className="text-2xl">💳</span>
+                      <div className="p-4 sm:p-6 bg-muted/20 sm:bg-gradient-card sm:backdrop-blur-sm rounded-lg sm:rounded-2xl border-0 sm:border sm:border-white/10 sm:hover:border-green-400/30 sm:transition-all sm:duration-300 sm:hover-scale">
+                        <div className="hidden sm:block absolute inset-0 bg-gradient-to-r from-green-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300"></div>
+                        <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                          <div className="w-8 h-8 sm:w-14 sm:h-14 bg-green-500 sm:bg-gradient-to-r sm:from-green-500 sm:to-blue-500 rounded-lg sm:rounded-2xl flex items-center justify-center">
+                            <span className="text-lg sm:text-2xl">💳</span>
                           </div>
                           <div>
-                            <h4 className="text-lg font-bold text-foreground">PIX</h4>
-                            <p className="text-sm text-muted-foreground">Pagamento instantâneo</p>
+                            <h4 className="text-base sm:text-lg font-bold text-foreground">PIX</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Pagamento instantâneo</p>
                           </div>
                         </div>
-                        <div className="bg-black/10 rounded-xl p-4">
-                          <p className="font-mono text-sm text-foreground break-all">
+                        <div className="bg-muted/30 sm:bg-black/10 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                          <p className="font-mono text-xs sm:text-sm text-foreground break-all">
                             {eventConfig.payment_info}
                           </p>
                         </div>
@@ -130,22 +130,22 @@ const Index = () => {
                     )}
                     
                     {/* In-Person Payment */}
-                    <div className="group relative p-6 bg-gradient-card backdrop-blur-sm rounded-2xl border border-white/10 hover:border-purple-400/30 transition-all duration-300 hover-scale">
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300"></div>
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-14 h-14 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                          <span className="text-2xl">🏛️</span>
+                    <div className="p-4 sm:p-6 bg-muted/20 sm:bg-gradient-card sm:backdrop-blur-sm rounded-lg sm:rounded-2xl border-0 sm:border sm:border-white/10 sm:hover:border-purple-400/30 sm:transition-all sm:duration-300 sm:hover-scale">
+                      <div className="hidden sm:block absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300"></div>
+                      <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                        <div className="w-8 h-8 sm:w-14 sm:h-14 bg-purple-500 sm:bg-gradient-to-r sm:from-purple-500 sm:to-pink-500 rounded-lg sm:rounded-2xl flex items-center justify-center">
+                          <span className="text-lg sm:text-2xl">🏛️</span>
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold text-foreground">Presencial</h4>
-                          <p className="text-sm text-muted-foreground">Na igreja</p>
+                          <h4 className="text-base sm:text-lg font-bold text-foreground">Presencial</h4>
+                          <p className="text-xs sm:text-sm text-muted-foreground">Na igreja</p>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <p className="font-semibold text-foreground">
+                      <div className="space-y-1 sm:space-y-2">
+                        <p className="font-medium sm:font-semibold text-sm sm:text-base text-foreground">
                           Pagamento presencial na igreja
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Com <span className="font-semibold">Taise</span> ou <span className="font-semibold">Pastora Alessandra</span>
                         </p>
                       </div>
