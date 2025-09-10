@@ -19,6 +19,7 @@ export type Database = {
           banner_url: string | null
           created_at: string
           event_date: string | null
+          event_name: string | null
           event_value: number | null
           id: string
           payment_info: string | null
@@ -28,6 +29,7 @@ export type Database = {
           banner_url?: string | null
           created_at?: string
           event_date?: string | null
+          event_name?: string | null
           event_value?: number | null
           id?: string
           payment_info?: string | null
@@ -37,6 +39,7 @@ export type Database = {
           banner_url?: string | null
           created_at?: string
           event_date?: string | null
+          event_name?: string | null
           event_value?: number | null
           id?: string
           payment_info?: string | null

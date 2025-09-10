@@ -14,6 +14,7 @@ import { Calendar, DollarSign, FileText, Image, Users, Save, LogOut, Home, Edit,
 
 interface EventConfig {
   id?: string;
+  event_name?: string;
   event_date: string;
   event_value: number;
   payment_info: string;
@@ -34,6 +35,7 @@ export default function Admin() {
   const { isLoggedIn, isLoading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [eventConfig, setEventConfig] = useState<EventConfig>({
+    event_name: "",
     event_date: "",
     event_value: 0,
     payment_info: "taiseacordi@gmail.com",
@@ -70,6 +72,7 @@ export default function Admin() {
       if (data) {
         setEventConfig({
           id: data.id,
+          event_name: data.event_name || "",
           event_date: data.event_date ? new Date(data.event_date).toISOString().slice(0, 16) : "",
           event_value: data.event_value || 0,
           payment_info: data.payment_info || "taiseacordi@gmail.com",
@@ -104,6 +107,7 @@ export default function Admin() {
     setIsLoading(true);
     try {
       const configData = {
+        event_name: eventConfig.event_name,
         event_date: eventConfig.event_date ? new Date(eventConfig.event_date).toISOString() : null,
         event_value: eventConfig.event_value,
         payment_info: eventConfig.payment_info,
@@ -161,6 +165,7 @@ export default function Admin() {
       if (error) throw error;
 
       setEventConfig({
+        event_name: "",
         event_date: "",
         event_value: 0,
         payment_info: "taiseacordi@gmail.com",
@@ -383,20 +388,18 @@ export default function Admin() {
               <>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="event_title" className="flex items-center gap-2">
+                    <Label htmlFor="event_name" className="flex items-center gap-2">
                       <FileText className="w-4 h-4" />
-                      Título do Evento
+                      Nome do Evento
                     </Label>
                     <Input
-                      id="event_title"
+                      id="event_name"
                       type="text"
                       placeholder="Ex: Retiro Espiritual de Primavera"
-                      value=""
-                      onChange={() => {}}
+                      value={eventConfig.event_name}
+                      onChange={(e) => setEventConfig(prev => ({ ...prev, event_name: e.target.value }))}
                       className="border-border/50 focus:border-celestial/50"
-                      disabled
                     />
-                    <p className="text-xs text-muted-foreground">Este campo será implementado futuramente</p>
                   </div>
                 </div>
 
@@ -503,6 +506,18 @@ export default function Admin() {
               <div className="space-y-4">
                 {eventConfig.id ? (
                   <>
+                    {eventConfig.event_name && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Nome do Evento
+                        </Label>
+                        <div className="p-3 bg-muted/50 rounded-md">
+                          {eventConfig.event_name}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
