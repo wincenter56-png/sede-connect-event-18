@@ -224,6 +224,34 @@ export default function Admin() {
     }
   };
 
+  const deleteRegistration = async (id: string, name: string) => {
+    const confirmed = window.confirm(`Tem certeza que deseja excluir a inscrição de ${name}?`);
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setRegistrations(prev => prev.filter(reg => reg.id !== id));
+
+      toast({
+        title: "Inscrição excluída",
+        description: "Inscrição excluída com sucesso",
+      });
+    } catch (error) {
+      console.error('Error deleting registration:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir inscrição",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-green-500';
@@ -656,6 +684,14 @@ export default function Admin() {
                             className="text-red-600 border-red-600 hover:bg-red-50"
                           >
                             Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => deleteRegistration(registration.id, registration.name)}
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
