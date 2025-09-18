@@ -6,11 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, DollarSign, FileText, Image, Users, Save, LogOut, Home, Edit, Trash2, Plus } from "lucide-react";
+import { Calendar, DollarSign, FileText, Image, Users, Save, LogOut, Home, Edit, Trash2, Plus, ChevronRight } from "lucide-react";
 
 interface EventConfig {
   id?: string;
@@ -28,12 +29,15 @@ interface Registration {
   receipt_url: string | null;
   status: string;
   created_at: string;
+  event_id?: string;
 }
 
 export default function Admin() {
   const { toast } = useToast();
   const { isLoggedIn, isLoading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
+  const [events, setEvents] = useState<EventConfig[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [eventConfig, setEventConfig] = useState<EventConfig>({
     event_name: "",
     event_date: "",
@@ -53,16 +57,44 @@ export default function Admin() {
     }
     
     if (isLoggedIn) {
-      loadEventConfig();
-      loadRegistrations();
+      loadEvents();
     }
   }, [isLoggedIn, authLoading, navigate]);
 
-  const loadEventConfig = async () => {
+  useEffect(() => {
+    if (selectedEventId) {
+      loadEventConfig();
+      loadRegistrations();
+    }
+  }, [selectedEventId]);
+
+  const loadEvents = async () => {
     try {
       const { data, error } = await supabase
         .from('event_config')
         .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setEvents(data || []);
+      
+      // Auto-select first event if none selected
+      if (data && data.length > 0 && !selectedEventId) {
+        setSelectedEventId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading events:', error);
+    }
+  };
+
+  const loadEventConfig = async () => {
+    if (!selectedEventId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('event_config')
+        .select('*')
+        .eq('id', selectedEventId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
@@ -85,10 +117,13 @@ export default function Admin() {
   };
 
   const loadRegistrations = async () => {
+    if (!selectedEventId) return;
+    
     try {
       const { data, error } = await supabase
         .from('registrations')
         .select('*')
+        .eq('event_id', selectedEventId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -130,9 +165,11 @@ export default function Admin() {
 
         if (error) throw error;
         setEventConfig(prev => ({ ...prev, id: data.id }));
+        setSelectedEventId(data.id);
       }
 
       setIsEditing(false);
+      loadEvents(); // Refresh events list
       toast({
         title: "Sucesso!",
         description: "Configurações do evento salvas com sucesso",
@@ -171,6 +208,8 @@ export default function Admin() {
         payment_info: "taiseacordi@gmail.com",
         banner_url: "",
       });
+      setSelectedEventId(null);
+      loadEvents(); // Refresh events list
 
       toast({
         title: "Sucesso!",
@@ -340,7 +379,7 @@ export default function Admin() {
               Painel Administrativo
             </h1>
             <p className="text-muted-foreground">
-              Gerencie as configurações do evento e visualize as inscrições
+              Gerencie múltiplos eventos e suas respectivas inscrições
             </p>
           </div>
           <div className="flex gap-2">
@@ -363,54 +402,103 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Event Configuration */}
-        <Card className="mb-8 shadow-xl border-0 bg-card/95 backdrop-blur">
+        {/* Event Selection */}
+        <Card className="mb-6 shadow-xl border-0 bg-card/95 backdrop-blur">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xl">
-                <FileText className="w-5 h-5" />
-                Configurações do Evento
+                <Calendar className="w-5 h-5" />
+                Selecionar Evento
               </div>
-              <div className="flex gap-2">
-                {eventConfig.id && !isEditing && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={startEditing}
-                      className="flex items-center gap-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={deleteEventConfig}
-                      className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Excluir
-                    </Button>
-                  </>
-                )}
-                {!eventConfig.id && !isEditing && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Criar Evento
-                  </Button>
-                )}
-              </div>
+              <Button
+                onClick={() => {
+                  setEventConfig({
+                    event_name: "",
+                    event_date: "",
+                    event_value: 0,
+                    payment_info: "taiseacordi@gmail.com",
+                    banner_url: "",
+                  });
+                  setSelectedEventId(null);
+                  setIsEditing(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Novo Evento
+              </Button>
             </CardTitle>
             <CardDescription>
-              {isEditing ? "Edite os detalhes do evento" : "Visualize ou gerencie as configurações do evento"}
+              Escolha um evento existente ou crie um novo
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            {events.length > 0 ? (
+              <Select value={selectedEventId || ""} onValueChange={setSelectedEventId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um evento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id!}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{event.event_name || 'Evento sem nome'}</span>
+                        <span className="text-sm text-muted-foreground ml-4">
+                          {event.event_date ? new Date(event.event_date).toLocaleDateString('pt-BR') : 'Sem data'}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhum evento criado ainda</p>
+                <p className="text-sm">Clique em "Novo Evento" para começar</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Event Configuration */}
+        {(selectedEventId || isEditing) && (
+          <Card className="mb-8 shadow-xl border-0 bg-card/95 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xl">
+                  <FileText className="w-5 h-5" />
+                  {isEditing && !selectedEventId ? "Criar Novo Evento" : "Configurações do Evento"}
+                </div>
+                <div className="flex gap-2">
+                  {selectedEventId && eventConfig.id && !isEditing && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={startEditing}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={deleteEventConfig}
+                        className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Excluir
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardTitle>
+              <CardDescription>
+                {isEditing ? "Edite os detalhes do evento" : "Visualize ou gerencie as configurações do evento"}
+              </CardDescription>
+            </CardHeader>
           <CardContent className="space-y-6">
             {isEditing ? (
               <>
@@ -615,25 +703,32 @@ export default function Admin() {
                   <div className="text-center py-8 text-muted-foreground">
                     <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>Nenhuma configuração de evento encontrada</p>
-                    <p className="text-sm">Clique em "Criar Evento" para adicionar nome, data, valor e outras informações</p>
+                    <p className="text-sm">Clique em "Editar" para configurar este evento</p>
                   </div>
                 )}
               </div>
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Registrations Table */}
-        <Card className="shadow-xl border-0 bg-card/95 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Users className="w-5 h-5" />
-              Inscrições ({registrations.length})
-            </CardTitle>
-            <CardDescription>
-              Lista de todas as pessoas cadastradas no evento
-            </CardDescription>
-          </CardHeader>
+        {selectedEventId && (
+          <Card className="shadow-xl border-0 bg-card/95 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Users className="w-5 h-5" />
+                Inscrições ({registrations.length})
+                {eventConfig.event_name && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    - {eventConfig.event_name}
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Lista de todas as pessoas cadastradas neste evento
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
@@ -701,12 +796,13 @@ export default function Admin() {
               </Table>
               {registrations.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nenhuma inscrição encontrada
+                  Nenhuma inscrição encontrada para este evento
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

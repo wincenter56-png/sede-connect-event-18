@@ -170,7 +170,7 @@ const Index = () => {
 
           {/* Form */}
           <div className="animate-fade-in">
-            <RegistrationForm eventConfig={eventConfig} />
+            <RegistrationForm />
           </div>
 
           {/* Info Cards */}

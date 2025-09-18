@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Phone, User, CreditCard, Send, MapPin, Smartphone } from "lucide-react";
+import { Upload, Phone, User, CreditCard, Send, MapPin, Smartphone, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FormData {
@@ -12,31 +13,67 @@ interface FormData {
   phone: string;
   paymentType: 'pix' | 'presencial';
   receipt: File | null;
+  eventId: string;
 }
 
 interface EventConfig {
   id: string;
+  event_name: string | null;
   event_date: string | null;
   event_value: number | null;
   payment_info: string | null;
   banner_url: string | null;
 }
 
-interface RegistrationFormProps {
-  eventConfig: EventConfig | null;
-}
-
-export default function RegistrationForm({ eventConfig }: RegistrationFormProps) {
+export default function RegistrationForm() {
   const { toast } = useToast();
+  const [events, setEvents] = useState<EventConfig[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<EventConfig | null>(null);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
     paymentType: 'pix',
     receipt: null,
+    eventId: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const whatsappNumber = "554896507165"; // Número do Ministério Sede do Espírito
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('event_config')
+        .select('*')
+        .order('event_date', { ascending: true });
+
+      if (error) throw error;
+      setEvents(data || []);
+
+      // Auto-select first event if available
+      if (data && data.length > 0) {
+        setSelectedEvent(data[0]);
+        setFormData(prev => ({ ...prev, eventId: data[0].id }));
+      }
+    } catch (error) {
+      console.error('Error loading events:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar eventos disponíveis",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEventChange = (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    setSelectedEvent(event || null);
+    setFormData(prev => ({ ...prev, eventId }));
+  };
 
   const handleInputChange = (field: keyof Omit<FormData, 'receipt'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -51,10 +88,10 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.phone) {
+    if (!formData.name || !formData.phone || !formData.eventId) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha nome e telefone.",
+        description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive",
       });
       return;
@@ -94,7 +131,8 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
             name: formData.name,
             phone: formData.phone,
             receipt_url: receiptUrl,
-            status: 'pending'
+            status: 'pending',
+            event_id: formData.eventId
           }
         ]);
 
@@ -105,16 +143,27 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
       // Criar mensagem para WhatsApp
       const paymentMessage = formData.paymentType === 'pix' 
         ? `💳 *Pagamento via PIX*\n` +
-          `🔑 Chave PIX: ${eventConfig?.payment_info || "taiseacordi@gmail.com"}\n` +
-          `💰 Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
+          `🔑 Chave PIX: ${selectedEvent?.payment_info || "taiseacordi@gmail.com"}\n` +
+          `💰 Valor: R$ ${selectedEvent?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
           `${formData.receipt ? '✅ Comprovante anexado no formulário\n' : '⚠️ *IMPORTANTE: ENVIE O COMPROVANTE NESTA CONVERSA*\n'}`
         : `💵 *Pagamento Presencial*\n` +
-          `💰 Valor: R$ ${eventConfig?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
+          `💰 Valor: R$ ${selectedEvent?.event_value?.toFixed(2).replace('.', ',') || 'Consultar'}\n` +
           `🏢 Pagamento será realizado no local do evento\n`;
+
+      const eventDateStr = selectedEvent?.event_date 
+        ? new Date(selectedEvent.event_date).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : 'Data a confirmar';
 
       const message = encodeURIComponent(
         `🙏 *INSCRIÇÃO CONFIRMADA*\n` +
-        `✨ *Encontro Ministério Sede do Espírito* ✨\n\n` +
+        `✨ *${selectedEvent?.event_name || 'Encontro Ministério Sede do Espírito'}* ✨\n\n` +
+        `📅 *Data:* ${eventDateStr}\n\n` +
         `👤 *Dados do Inscrito:*\n` +
         `📝 Nome: ${formData.name}\n` +
         `📱 Telefone: ${formData.phone}\n\n` +
@@ -141,6 +190,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
         phone: "",
         paymentType: 'pix',
         receipt: null,
+        eventId: events.length > 0 ? events[0].id : "",
       });
 
     } catch (error) {
@@ -162,12 +212,44 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
           Inscrição do Encontro
         </CardTitle>
         <CardDescription className="text-muted-foreground text-sm sm:text-base">
-          Preencha seus dados para participar deste momento especial
+          Escolha um evento e preencha seus dados para participar
         </CardDescription>
       </CardHeader>
       
       <CardContent className="px-4 sm:px-6">
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        {events.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Nenhum evento disponível no momento</p>
+            <p className="text-sm">Volte em breve para ver novos eventos!</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            {/* Event Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="event" className="flex items-center gap-2 text-sm font-medium">
+                <Calendar className="w-4 h-4" />
+                Selecionar Evento
+              </Label>
+              <Select value={formData.eventId} onValueChange={handleEventChange}>
+                <SelectTrigger className="border-border/50 focus:border-celestial/50">
+                  <SelectValue placeholder="Escolha um evento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{event.event_name || 'Evento sem nome'}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {event.event_date ? new Date(event.event_date).toLocaleDateString('pt-BR') : 'Data a definir'} 
+                          {event.event_value && ` - R$ ${event.event_value.toFixed(2).replace('.', ',')}`}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
               <User className="w-4 h-4" />
@@ -235,7 +317,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
           </div>
 
           {/* PIX Information - Só mostra se PIX for selecionado */}
-          {formData.paymentType === 'pix' && (
+          {formData.paymentType === 'pix' && selectedEvent && (
             <div className="bg-holy/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-celestial/20">
               <div className="flex items-center gap-2 mb-3">
                 <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-celestial" />
@@ -247,13 +329,13 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
                   </p>
                   <div className="bg-card/50 rounded-lg p-2 sm:p-3 border border-border/30">
                     <p className="font-mono text-xs sm:text-sm font-medium text-center text-celestial break-all">
-                      {eventConfig?.payment_info || "taiseacordi@gmail.com"}
+                      {selectedEvent.payment_info || "taiseacordi@gmail.com"}
                     </p>
                   </div>
-                  {eventConfig?.event_value && (
+                  {selectedEvent.event_value && (
                     <div className="bg-divine/10 rounded-lg p-2 sm:p-3 border border-celestial/20">
                       <p className="text-xs sm:text-sm font-medium text-center text-celestial">
-                        Valor: R$ {eventConfig.event_value.toFixed(2).replace('.', ',')}
+                        Valor: R$ {selectedEvent.event_value.toFixed(2).replace('.', ',')}
                       </p>
                     </div>
                   )}
@@ -265,7 +347,7 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
           )}
 
           {/* Informações Pagamento Presencial */}
-          {formData.paymentType === 'presencial' && (
+          {formData.paymentType === 'presencial' && selectedEvent && (
             <div className="bg-holy/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-celestial/20">
               <div className="flex items-center gap-2 mb-3">
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-celestial" />
@@ -275,10 +357,10 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
                 <p className="text-xs sm:text-sm text-muted-foreground text-center">
                   O pagamento será realizado no local do evento
                 </p>
-                {eventConfig?.event_value && (
+                {selectedEvent.event_value && (
                   <div className="bg-divine/10 rounded-lg p-2 sm:p-3 border border-celestial/20">
                     <p className="text-xs sm:text-sm font-medium text-center text-celestial">
-                      Valor: R$ {eventConfig.event_value.toFixed(2).replace('.', ',')}
+                      Valor: R$ {selectedEvent.event_value.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
                 )}
@@ -317,21 +399,22 @@ export default function RegistrationForm({ eventConfig }: RegistrationFormProps)
             </div>
           )}
 
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-divine hover:opacity-90 text-celestial-foreground font-medium py-4 sm:py-6 transition-all duration-300 hover:scale-[1.02] text-sm sm:text-base"
-          >
-            {isSubmitting ? (
-              "Processando..."
-            ) : (
-              <span className="flex items-center gap-2">
-                <Send className="w-4 h-4" />
-                Confirmar Inscrição
-              </span>
-            )}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-divine hover:opacity-90 text-celestial-foreground font-medium py-4 sm:py-6 transition-all duration-300 hover:scale-[1.02] text-sm sm:text-base"
+            >
+              {isSubmitting ? (
+                "Processando..."
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Send className="w-4 h-4" />
+                  Confirmar Inscrição
+                </span>
+              )}
+            </Button>
+          </form>
+        )}
       </CardContent>
     </Card>
   );

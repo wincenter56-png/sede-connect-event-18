@@ -50,6 +50,7 @@ export type Database = {
       registrations: {
         Row: {
           created_at: string
+          event_id: string | null
           id: string
           name: string
           phone: string
@@ -59,6 +60,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          event_id?: string | null
           id?: string
           name: string
           phone: string
@@ -68,6 +70,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          event_id?: string | null
           id?: string
           name?: string
           phone?: string
@@ -75,7 +78,15 @@ export type Database = {
           status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_config"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
