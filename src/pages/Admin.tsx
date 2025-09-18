@@ -46,6 +46,7 @@ export default function Admin() {
     banner_url: "",
   });
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [orphanedRegistrations, setOrphanedRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -58,6 +59,7 @@ export default function Admin() {
     
     if (isLoggedIn) {
       loadEvents();
+      loadOrphanedRegistrations();
     }
   }, [isLoggedIn, authLoading, navigate]);
 
@@ -133,6 +135,50 @@ export default function Admin() {
       toast({
         title: "Erro",
         description: "Erro ao carregar registros",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadOrphanedRegistrations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('*')
+        .is('event_id', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrphanedRegistrations(data || []);
+    } catch (error) {
+      console.error('Error loading orphaned registrations:', error);
+    }
+  };
+
+  const linkRegistrationToEvent = async (registrationId: string, eventId: string) => {
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .update({ event_id: eventId })
+        .eq('id', registrationId);
+
+      if (error) throw error;
+
+      // Refresh both lists
+      loadOrphanedRegistrations();
+      if (selectedEventId) {
+        loadRegistrations();
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: "Inscrição vinculada ao evento",
+      });
+    } catch (error) {
+      console.error('Error linking registration:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao vincular inscrição",
         variant: "destructive",
       });
     }
@@ -802,6 +848,102 @@ export default function Admin() {
             </div>
           </CardContent>
         </Card>
+        )}
+
+        {/* Orphaned Registrations */}
+        {orphanedRegistrations.length > 0 && (
+          <Card className="shadow-xl border-0 bg-card/95 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl text-amber-600">
+                <Users className="w-5 h-5" />
+                Inscrições Sem Evento ({orphanedRegistrations.length})
+              </CardTitle>
+              <CardDescription>
+                Inscrições antigas que precisam ser vinculadas a um evento específico
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Data de Inscrição</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orphanedRegistrations.map((registration) => (
+                      <TableRow key={registration.id}>
+                        <TableCell className="font-medium">
+                          {registration.name}
+                        </TableCell>
+                        <TableCell>{registration.phone}</TableCell>
+                        <TableCell>
+                          {new Date(registration.created_at).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`text-white ${getStatusColor(registration.status)}`}>
+                            {getStatusLabel(registration.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {events.length > 0 && (
+                              <Select onValueChange={(eventId) => linkRegistrationToEvent(registration.id, eventId)}>
+                                <SelectTrigger className="w-48">
+                                  <SelectValue placeholder="Vincular ao evento" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {events.map((event) => (
+                                    <SelectItem key={event.id} value={event.id!}>
+                                      {event.event_name || 'Evento sem nome'}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateRegistrationStatus(registration.id, 'confirmed')}
+                              className="text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              Confirmar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateRegistrationStatus(registration.id, 'cancelled')}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteRegistration(registration.id, registration.name)}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
