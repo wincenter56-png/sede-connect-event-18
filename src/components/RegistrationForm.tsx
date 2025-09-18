@@ -25,7 +25,12 @@ interface EventConfig {
   banner_url: string | null;
 }
 
-export default function RegistrationForm() {
+interface RegistrationFormProps {
+  className?: string;
+  eventId?: string;
+}
+
+export default function RegistrationForm({ className, eventId }: RegistrationFormProps) {
   const { toast } = useToast();
   const [events, setEvents] = useState<EventConfig[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventConfig | null>(null);
@@ -44,6 +49,17 @@ export default function RegistrationForm() {
     loadEvents();
   }, []);
 
+  useEffect(() => {
+    if (eventId && events.length > 0) {
+      // If eventId is provided as prop, use it
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        setSelectedEvent(event);
+        setFormData(prev => ({ ...prev, eventId }));
+      }
+    }
+  }, [eventId, events]);
+
   const loadEvents = async () => {
     try {
       const { data, error } = await supabase
@@ -54,8 +70,8 @@ export default function RegistrationForm() {
       if (error) throw error;
       setEvents(data || []);
 
-      // Auto-select first event if available
-      if (data && data.length > 0) {
+      // Auto-select first event if available and no eventId prop is provided
+      if (data && data.length > 0 && !eventId) {
         setSelectedEvent(data[0]);
         setFormData(prev => ({ ...prev, eventId: data[0].id }));
       }
@@ -206,7 +222,7 @@ export default function RegistrationForm() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl border-0 bg-card/95 backdrop-blur">
+    <Card className={`w-full max-w-md mx-auto shadow-xl border-0 bg-card/95 backdrop-blur ${className || ''}`}>
       <CardHeader className="text-center pb-4 px-4 sm:px-6 sm:pb-6">
         <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-divine bg-clip-text text-transparent">
           Inscrição do Encontro
@@ -225,31 +241,60 @@ export default function RegistrationForm() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* Event Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="event" className="flex items-center gap-2 text-sm font-medium">
-                <Calendar className="w-4 h-4" />
-                Selecionar Evento
-              </Label>
-              <Select value={formData.eventId} onValueChange={handleEventChange}>
-                <SelectTrigger className="border-border/50 focus:border-celestial/50">
-                  <SelectValue placeholder="Escolha um evento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {events.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{event.event_name || 'Evento sem nome'}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {event.event_date ? new Date(event.event_date).toLocaleDateString('pt-BR') : 'Data a definir'} 
-                          {event.event_value && ` - R$ ${event.event_value.toFixed(2).replace('.', ',')}`}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Event Selection - Only show if no eventId prop is provided */}
+            {!eventId && (
+              <div className="space-y-2">
+                <Label htmlFor="event" className="flex items-center gap-2 text-sm font-medium">
+                  <Calendar className="w-4 h-4" />
+                  Selecionar Evento
+                </Label>
+                <Select value={formData.eventId} onValueChange={handleEventChange}>
+                  <SelectTrigger className="border-border/50 focus:border-celestial/50">
+                    <SelectValue placeholder="Escolha um evento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.map((event) => (
+                      <SelectItem key={event.id} value={event.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{event.event_name || 'Evento sem nome'}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {event.event_date ? new Date(event.event_date).toLocaleDateString('pt-BR') : 'Data a definir'} 
+                            {event.event_value && ` - R$ ${event.event_value.toFixed(2).replace('.', ',')}`}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Show selected event info when eventId is provided */}
+            {eventId && selectedEvent && (
+              <div className="bg-celestial/5 border border-celestial/20 rounded-lg p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <Calendar className="w-5 h-5 text-celestial" />
+                  <h3 className="font-semibold text-celestial">Evento Selecionado</h3>
+                </div>
+                <p className="font-medium text-foreground">{selectedEvent.event_name || 'Evento da Igreja'}</p>
+                {selectedEvent.event_date && (
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(selectedEvent.event_date).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                )}
+                {selectedEvent.event_value && (
+                  <p className="text-sm font-semibold text-celestial">
+                    R$ {selectedEvent.event_value.toFixed(2).replace('.', ',')}
+                  </p>
+                )}
+              </div>
+            )}
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
               <User className="w-4 h-4" />
